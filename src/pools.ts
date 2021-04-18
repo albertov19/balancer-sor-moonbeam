@@ -4,9 +4,54 @@ import * as bmath from './bmath';
 
 export class POOLS {
     async getAllPublicSwapPools(URL: string): Promise<SubGraphPools> {
-        const result = await fetch(URL);
-        const allPools = result.json();
-        return allPools;
+        const query = `
+            {
+                pools0: pools (first: 1000, where: {publicSwap: true, active: true}) {
+                  id
+                  swapFee
+                  totalWeight
+                  publicSwap
+                  tokens {
+                    id
+                    address
+                    balance
+                    decimals
+                    symbol
+                    denormWeight
+                  }
+                  tokensList
+                },
+                pools1000: pools (first: 1000, skip: 1000, where: {publicSwap: true, active: true}) {
+                  id
+                  swapFee
+                  totalWeight
+                  publicSwap
+                  tokens {
+                    id
+                    address
+                    balance
+                    decimals
+                    symbol
+                    denormWeight
+                  }
+                  tokensList
+                }
+            }
+            `;
+        const result = await fetch(URL, {
+            method: 'POST',
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                query,
+            }),
+        });
+        const { data } = await result.json();
+        let allPools = data.pools0.concat(data.pools1000);
+ 
+        return { pools: allPools } ;
     }
 
     async formatPoolsBigNumber(pools: SubGraphPools): Promise<Pools> {
